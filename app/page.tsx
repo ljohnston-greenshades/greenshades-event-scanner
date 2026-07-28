@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { BadgeScanner } from "@/components/BadgeScanner";
 import { ReviewForm } from "@/components/ReviewForm";
 import { Contact, emptyContact, OcrResult, SubmitResult } from "@/lib/types";
@@ -10,10 +10,19 @@ type Phase = "capture" | "review" | "done";
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("capture");
   const [contact, setContact] = useState<Contact>(emptyContact());
+  const [eventName, setEventName] = useState("");
   const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
+
+  // Read the `event=` query param once on mount and tag every scan with it.
+  // Read from window.location (not useSearchParams) to keep the page statically
+  // prerenderable without a Suspense boundary.
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("event");
+    if (value) setEventName(value);
+  }, []);
 
   async function handleCapture(dataUrl: string) {
     setScanning(true);
@@ -27,7 +36,7 @@ export default function Home() {
       const data = (await res.json()) as OcrResult & { error?: string };
       if (!res.ok) throw new Error(data.error || "OCR failed");
 
-      setContact(data.contact);
+      setContact({ ...data.contact, event: eventName });
       setBanner(
         data.mocked
           ? "Demo mode: no ANTHROPIC_API_KEY set, showing sample data."
@@ -63,7 +72,7 @@ export default function Home() {
   }
 
   function reset() {
-    setContact(emptyContact());
+    setContact({ ...emptyContact(), event: eventName });
     setBanner(null);
     setError(null);
     setPhase("capture");

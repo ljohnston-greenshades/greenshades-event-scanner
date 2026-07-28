@@ -13,6 +13,12 @@ export interface Contact {
   phone: string;
   /** Free-text notes the rep adds during review (e.g. "wants a demo"). */
   notes: string;
+  /**
+   * Which event this scan came from, sourced from the `event=` query param
+   * (e.g. open the app at `?event=HR-Tech-2026`). Carried through to Clay so
+   * every contact is tagged with its trade show. Not shown in the UI.
+   */
+  event: string;
 }
 
 export function emptyContact(): Contact {
@@ -24,6 +30,7 @@ export function emptyContact(): Contact {
     email: "",
     phone: "",
     notes: "",
+    event: "",
   };
 }
 
