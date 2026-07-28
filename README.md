@@ -80,6 +80,27 @@ All read server-side only. See `.env.example`.
 | `ANTHROPIC_API_KEY` | Enables real OCR (Claude vision). | Yes |
 | `CLAY_WEBHOOK_URL` | Clay source webhook; every reviewed contact is POSTed here. | Yes |
 | `ANTHROPIC_MODEL` | OCR model; defaults to `claude-opus-5`. | No |
+| `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Upstash Redis (Vercel Marketplace KV) for per-rep scan counts. Injected by the integration. | Admin only |
+| `ADMIN_PASSWORD` | Password for the `/admin` panel. Unset = panel disabled. | Admin only |
+
+## Query parameters
+
+Open the app with these to tag scans (both optional, combine freely):
+
+| Param | Effect |
+| --- | --- |
+| `?event=HR-Tech-2026` | Tags every contact with the event; shown in the header. |
+| `?rep=<hubspotId>` | Attributes scans to a rep (see `lib/reps.ts`); greets them and tags contacts with `rep_name` / `rep_id`. |
+
+e.g. `…/?event=HR-Tech-2026&rep=91529343`
+
+## Admin panel
+
+`/admin` shows scans per rep, gated by `ADMIN_PASSWORD`. Counts are incremented
+on each submission and stored as integers in Upstash Redis (no PII). Enable the
+Redis integration in Vercel (Storage → Marketplace) and set `ADMIN_PASSWORD`;
+without them, counting is a no-op and the panel reports it's not configured.
+The page is not linked from the scanner.
 
 **HubSpot credentials live in Clay**, not here — Clay does the lookup and the
 create/update, so its HubSpot integration needs a Private App token with
