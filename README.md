@@ -1,13 +1,12 @@
 # Greenshades Event Scanner
 
 Scan a trade-show badge with any phone or camera, OCR the details into a form,
-review/correct them (human-in-the-loop), and push the contact to **HubSpot** —
-optionally enriched via **Clay** first.
+review/correct them (human-in-the-loop), and hand the contact off to **Clay**,
+which enriches it and syncs it to **HubSpot**.
 
-This PR is the initial scaffold: a deployable Next.js app that builds green so
-it can be connected to Vercel for hosting. Real integrations are wired but
-degrade gracefully to a demo mode when no keys are configured, so a preview
-deploy works out of the box.
+This is a deployable Next.js app that builds green so it can be hosted on
+Vercel. Integrations degrade gracefully to a demo mode when no keys are
+configured, so a preview deploy works out of the box.
 
 ---
 
@@ -15,10 +14,8 @@ deploy works out of the box.
 
 ```
  Camera  →  /api/ocr        →  Review form   →  /api/contacts  →  Clay ──► HubSpot
- (phone)    (Claude vision,     (rep confirms     (pipeline)        (enrich)   (system
-            structured JSON)     & completes)                                   of record)
-                                                                   └────────► HubSpot
-                                                                     (direct, if Clay off)
+ (phone)    (Claude vision,     (rep confirms     (webhook           (enrich +   (upsert:
+            structured JSON)     & completes)      handoff)           lookup)     update or create)
 ```
 
 1. **Capture** — `components/BadgeScanner.tsx` opens the rear camera (or a file
@@ -28,7 +25,8 @@ deploy works out of the box.
    is processed in-memory and **never persisted**.
 3. **Review** — `components/ReviewForm.tsx` lets the rep fix misreads and fill
    gaps. Nothing leaves the device until they hit Save.
-4. **Submit** — `POST /api/contacts` runs the destination pipeline (below).
+4. **Submit** — `POST /api/contacts` POSTs the reviewed contact to a Clay
+   webhook. **Clay owns everything downstream.**
 
 ## Why these choices
 
@@ -38,11 +36,12 @@ deploy works out of the box.
 - **OCR — a vision LLM (Claude), not client-side Tesseract.** Badges vary wildly
   in layout; a vision model returns clean *structured* fields in one call, and
   the review step catches the occasional misread.
-- **Destination — Clay first, then HubSpot.** A badge often carries only
-  name + company. Clay enriches that into email, title, LinkedIn, and
-  firmographics before it lands in HubSpot, avoiding thin CRM records. The
-  pipeline is pluggable — flip `ENRICH_VIA_CLAY` off to write straight to
-  HubSpot.
+- **Destination — hand off to Clay, which upserts into HubSpot.** A badge often
+  carries only name + company. Clay enriches that (email, title, LinkedIn,
+  firmographics), then looks the person up in HubSpot and updates or creates the
+  contact. Enriching *before* the lookup means the dedupe happens on the real
+  email, so you don't create duplicates. The app itself has no HubSpot logic —
+  it just hands off to Clay.
 
 ## PII handling
 
@@ -67,21 +66,24 @@ is still clickable.
 
 ### Deploying to Vercel
 
-1. Import this repo in Vercel (framework auto-detects as Next.js).
-2. Add the environment variables from `.env.example` in the Vercel dashboard.
-3. Deploy. Set `ENRICH_VIA_CLAY=true` once the Clay table is ready.
+1. Import this repo in Vercel (framework is pinned to Next.js via `vercel.json`).
+2. Add the environment variables below in the Vercel dashboard (Production, and
+   Preview if you want previews to use real keys).
+3. Deploy. Re-deploy after changing env vars — they're applied at deploy time.
 
 ## Configuration
 
-See `.env.example` for the full list. Summary:
+All read server-side only. See `.env.example`.
 
-| Variable | Purpose |
-| --- | --- |
-| `ANTHROPIC_API_KEY` | Enables real OCR (Claude vision). |
-| `ANTHROPIC_MODEL` | OCR model; defaults to `claude-opus-5`. |
-| `ENRICH_VIA_CLAY` | `true` → enrich via Clay before HubSpot. |
-| `CLAY_WEBHOOK_URL` | Clay source webhook the reviewed contact is POSTed to. |
-| `HUBSPOT_ACCESS_TOKEN` | Private App token (`crm.objects.contacts.write`). |
+| Variable | Purpose | Required |
+| --- | --- | --- |
+| `ANTHROPIC_API_KEY` | Enables real OCR (Claude vision). | Yes |
+| `CLAY_WEBHOOK_URL` | Clay source webhook; every reviewed contact is POSTed here. | Yes |
+| `ANTHROPIC_MODEL` | OCR model; defaults to `claude-opus-5`. | No |
+
+**HubSpot credentials live in Clay**, not here — Clay does the lookup and the
+create/update, so its HubSpot integration needs a Private App token with
+`crm.objects.contacts.read` **and** `crm.objects.contacts.write`.
 
 ## Project layout
 
@@ -90,7 +92,7 @@ app/
   layout.tsx            app shell
   page.tsx              capture → review → done state machine
   api/ocr/route.ts      badge image → structured contact
-  api/contacts/route.ts reviewed contact → Clay/HubSpot pipeline
+  api/contacts/route.ts reviewed contact → Clay webhook handoff
 components/
   BadgeScanner.tsx      camera capture + preview
   ReviewForm.tsx        human-in-the-loop edit form
@@ -98,12 +100,10 @@ lib/
   types.ts              shared Contact / result types
   ocr.ts                Claude vision extraction (+ mock fallback)
   clay.ts               Clay webhook client
-  hubspot.ts            HubSpot CRM client
 ```
 
 ## Roadmap (post-scaffold)
 
-- Wire up real Clay + HubSpot credentials and confirm the enrichment path.
-- Dedupe against existing HubSpot contacts before create.
+- Build out the Clay table: enrich → HubSpot lookup → conditional update/create.
 - Offline queue so scans survive spotty trade-show Wi-Fi.
 - Multi-badge batch mode.
