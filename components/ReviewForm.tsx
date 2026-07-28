@@ -57,6 +57,9 @@ export function ReviewForm({
         />
       </label>
 
+      {/* Populated from the `event=` query param; not shown to the rep. */}
+      <input type="hidden" name="event" value={contact.event} readOnly />
+
       <button
         type="submit"
         disabled={submitting}
