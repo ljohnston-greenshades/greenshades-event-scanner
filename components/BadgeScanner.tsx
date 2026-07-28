@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { ScanningOverlay } from "@/components/ScanningOverlay";
 
 /**
  * The capture screen. Three ways in:
@@ -60,12 +61,15 @@ export function BadgeScanner({
       />
 
       {preview ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={preview}
-          alt="Captured badge"
-          className="w-full rounded-lg border border-gray-200"
-        />
+        <div className="relative">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={preview}
+            alt="Captured badge"
+            className="w-full rounded-lg border border-gray-200"
+          />
+          {busy && <ScanningOverlay />}
+        </div>
       ) : (
         <div className="flex aspect-[3/2] w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400">
           No badge captured yet

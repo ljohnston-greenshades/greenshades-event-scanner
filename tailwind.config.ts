@@ -15,6 +15,24 @@ const config: Config = {
           light: "#E6F3EC",
         },
       },
+      keyframes: {
+        // A scan line sweeping down the badge, fading in/out at the edges.
+        scanline: {
+          "0%": { top: "0%", opacity: "0" },
+          "12%": { opacity: "1" },
+          "88%": { opacity: "1" },
+          "100%": { top: "100%", opacity: "0" },
+        },
+        // Subtle breathing tint over the badge while processing.
+        scanpulse: {
+          "0%, 100%": { opacity: "0.25" },
+          "50%": { opacity: "0.5" },
+        },
+      },
+      animation: {
+        scanline: "scanline 1.5s ease-in-out infinite",
+        scanpulse: "scanpulse 1.5s ease-in-out infinite",
+      },
     },
   },
   plugins: [],
