@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const stats = await getStats();
+  const event = req.nextUrl.searchParams.get("event") ?? "";
+  const stats = await getStats(event);
   return NextResponse.json(stats);
 }
