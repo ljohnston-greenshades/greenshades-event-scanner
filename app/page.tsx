@@ -71,6 +71,14 @@ export default function Home() {
     }
   }
 
+  // Skip OCR entirely and go straight to a blank review form.
+  function handleManual() {
+    setContact({ ...emptyContact(), event: eventName });
+    setBanner(null);
+    setError(null);
+    setPhase("review");
+  }
+
   function reset() {
     setContact({ ...emptyContact(), event: eventName });
     setBanner(null);
@@ -92,13 +100,17 @@ export default function Home() {
       )}
 
       {phase === "capture" && (
-        <BadgeScanner onCapture={handleCapture} busy={scanning} />
+        <BadgeScanner
+          onCapture={handleCapture}
+          onManual={handleManual}
+          busy={scanning}
+        />
       )}
 
       {phase === "review" && (
         <>
           <p className="text-sm text-gray-500">
-            Check the details below, fix anything the scan got wrong, then save.
+            Review and complete the details below, then save.
           </p>
           <ReviewForm
             contact={contact}

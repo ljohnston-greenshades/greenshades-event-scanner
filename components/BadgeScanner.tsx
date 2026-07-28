@@ -3,18 +3,23 @@
 import { useRef, useState } from "react";
 
 /**
- * Captures a badge photo. Uses a plain file input with `capture="environment"`
- * so it opens the rear camera on phones and a file picker on desktop — no
- * camera-stream permissions dance required for a first version.
+ * The capture screen. Three ways in:
+ *  - "Scan a badge" (primary): opens the rear camera to photograph a badge.
+ *  - "Upload a photo": picks an existing image from the camera roll / files.
+ *  - "Enter manually": skips OCR and goes straight to a blank review form.
+ * The first two run OCR via onCapture; the last calls onManual.
  */
 export function BadgeScanner({
   onCapture,
+  onManual,
   busy,
 }: {
   onCapture: (dataUrl: string) => void;
+  onManual: () => void;
   busy: boolean;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
+  const uploadRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
   function handleFile(file: File) {
@@ -27,18 +32,31 @@ export function BadgeScanner({
     reader.readAsDataURL(file);
   }
 
+  function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) handleFile(file);
+    // Reset so selecting the same file again still fires onChange.
+    e.target.value = "";
+  }
+
   return (
     <div className="space-y-4">
+      {/* Rear camera on phones */}
       <input
-        ref={inputRef}
+        ref={cameraRef}
         type="file"
         accept="image/*"
         capture="environment"
         className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFile(file);
-        }}
+        onChange={onInputChange}
+      />
+      {/* Camera roll / photo library (no `capture` attribute) */}
+      <input
+        ref={uploadRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={onInputChange}
       />
 
       {preview ? (
@@ -54,14 +72,35 @@ export function BadgeScanner({
         </div>
       )}
 
+      {/* Primary call to action */}
       <button
         type="button"
         disabled={busy}
-        onClick={() => inputRef.current?.click()}
+        onClick={() => cameraRef.current?.click()}
         className="w-full rounded-lg bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
-        {busy ? "Reading badge…" : preview ? "Scan another" : "Scan a badge"}
+        {busy ? "Reading badge…" : "Scan a badge"}
       </button>
+
+      {/* Secondary options */}
+      <div className="grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => uploadRef.current?.click()}
+          className="rounded-lg border border-brand px-3 py-3 font-semibold text-brand disabled:opacity-50"
+        >
+          Upload a photo
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onManual}
+          className="rounded-lg border border-gray-300 px-3 py-3 font-semibold text-gray-700 disabled:opacity-50"
+        >
+          Enter manually
+        </button>
+      </div>
     </div>
   );
 }
