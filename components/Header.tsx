@@ -2,19 +2,21 @@
 
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/Logo";
+import { formatEventName } from "@/lib/format";
 
 /**
  * App header: Greenshades logo on the left, and — when the app is opened with
  * an `event=` query param — the event name on the right as a visual
- * confirmation for the rep that scans are being tagged. Dashes in the param
- * are shown as spaces (e.g. ?event=HR-Tech-2026 → "HR Tech 2026").
+ * confirmation for the rep that scans are being tagged. The slug is formatted
+ * for display — dashes become spaces, words are title-cased, and acronyms are
+ * fully capitalized (e.g. ?event=HR-Tech-2026 → "HR Tech 2026").
  */
 export function Header() {
   const [eventLabel, setEventLabel] = useState("");
 
   useEffect(() => {
     const value = new URLSearchParams(window.location.search).get("event");
-    if (value) setEventLabel(value.replace(/-/g, " "));
+    if (value) setEventLabel(formatEventName(value));
   }, []);
 
   return (
