@@ -57,8 +57,10 @@ export function ReviewForm({
         />
       </label>
 
-      {/* Populated from the `event=` query param; not shown to the rep. */}
+      {/* Populated from query params; not shown to the rep. */}
       <input type="hidden" name="event" value={contact.event} readOnly />
+      <input type="hidden" name="rep_name" value={contact.repName} readOnly />
+      <input type="hidden" name="rep_id" value={contact.repId} readOnly />
 
       <button
         type="submit"
