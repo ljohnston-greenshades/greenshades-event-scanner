@@ -37,7 +37,7 @@ export interface OcrResult {
 /** Result returned by /api/contacts. */
 export interface SubmitResult {
   ok: boolean;
-  /** Where the contact ended up: "hubspot", "clay", or "mock". */
-  destination: "hubspot" | "clay" | "mock";
+  /** Where the contact was handed off: "clay", or "mock" when not configured. */
+  destination: "clay" | "mock";
   message: string;
 }

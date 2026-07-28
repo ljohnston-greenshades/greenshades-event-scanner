@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Contact, SubmitResult } from "@/lib/types";
-import { createHubSpotContact } from "@/lib/hubspot";
 import { sendToClay } from "@/lib/clay";
 
 export const runtime = "nodejs";
@@ -11,11 +10,11 @@ export const dynamic = "force-dynamic";
  * Body: Contact (the reviewed, human-approved record)
  * Returns: SubmitResult
  *
- * Pipeline (configurable via env):
- *   ENRICH_VIA_CLAY=true  → POST to Clay, which enriches and forwards to HubSpot
- *   otherwise             → create the contact directly in HubSpot
+ * The reviewed contact is handed off to Clay via a webhook. Clay owns the rest
+ * of the pipeline: enrich the sparse badge data, look the person up in HubSpot,
+ * then update the existing contact or create a new one (upsert).
  *
- * If neither destination is configured, the record is accepted as a no-op mock
+ * If CLAY_WEBHOOK_URL is not configured, the record is accepted as a no-op mock
  * so the flow can be demoed on a fresh Vercel deploy.
  */
 export async function POST(req: NextRequest) {
@@ -33,33 +32,21 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const enrichViaClay = process.env.ENRICH_VIA_CLAY === "true";
-
-  try {
-    if (enrichViaClay && process.env.CLAY_WEBHOOK_URL) {
-      await sendToClay(contact);
-      return NextResponse.json<SubmitResult>({
-        ok: true,
-        destination: "clay",
-        message: "Sent to Clay for enrichment, then on to HubSpot.",
-      });
-    }
-
-    if (process.env.HUBSPOT_ACCESS_TOKEN) {
-      await createHubSpotContact(contact);
-      return NextResponse.json<SubmitResult>({
-        ok: true,
-        destination: "hubspot",
-        message: "Contact created in HubSpot.",
-      });
-    }
-
+  if (!process.env.CLAY_WEBHOOK_URL) {
     // Nothing configured yet — accept as a mock so previews work.
     return NextResponse.json<SubmitResult>({
       ok: true,
       destination: "mock",
-      message:
-        "No destination configured — contact accepted but not sent anywhere.",
+      message: "No Clay webhook configured — contact accepted but not sent.",
+    });
+  }
+
+  try {
+    await sendToClay(contact);
+    return NextResponse.json<SubmitResult>({
+      ok: true,
+      destination: "clay",
+      message: "Sent to Clay for enrichment and sync to HubSpot.",
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Submit failed";
