@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { BadgeScanner } from "@/components/BadgeScanner";
 import { ReviewForm } from "@/components/ReviewForm";
 import { Contact, emptyContact, OcrResult, SubmitResult } from "@/lib/types";
+import { firstNameOf, repNameForId } from "@/lib/reps";
 
 type Phase = "capture" | "review" | "done";
 
@@ -11,6 +12,8 @@ export default function Home() {
   const [phase, setPhase] = useState<Phase>("capture");
   const [contact, setContact] = useState<Contact>(emptyContact());
   const [eventName, setEventName] = useState("");
+  const [repName, setRepName] = useState("");
+  const [repId, setRepId] = useState("");
   const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -20,8 +23,15 @@ export default function Home() {
   // Read from window.location (not useSearchParams) to keep the page statically
   // prerenderable without a Suspense boundary.
   useEffect(() => {
-    const value = new URLSearchParams(window.location.search).get("event");
-    if (value) setEventName(value);
+    const params = new URLSearchParams(window.location.search);
+    const event = params.get("event");
+    if (event) setEventName(event);
+
+    const rep = params.get("rep");
+    if (rep) {
+      setRepId(rep);
+      setRepName(repNameForId(rep));
+    }
   }, []);
 
   async function handleCapture(dataUrl: string) {
@@ -36,7 +46,7 @@ export default function Home() {
       const data = (await res.json()) as OcrResult & { error?: string };
       if (!res.ok) throw new Error(data.error || "OCR failed");
 
-      setContact({ ...data.contact, event: eventName });
+      setContact({ ...data.contact, event: eventName, repName, repId });
       setBanner(
         data.mocked
           ? "Demo mode: no ANTHROPIC_API_KEY set, showing sample data."
@@ -73,14 +83,14 @@ export default function Home() {
 
   // Skip OCR entirely and go straight to a blank review form.
   function handleManual() {
-    setContact({ ...emptyContact(), event: eventName });
+    setContact({ ...emptyContact(), event: eventName, repName, repId });
     setBanner(null);
     setError(null);
     setPhase("review");
   }
 
   function reset() {
-    setContact({ ...emptyContact(), event: eventName });
+    setContact({ ...emptyContact(), event: eventName, repName, repId });
     setBanner(null);
     setError(null);
     setPhase("capture");
@@ -100,11 +110,18 @@ export default function Home() {
       )}
 
       {phase === "capture" && (
-        <BadgeScanner
-          onCapture={handleCapture}
-          onManual={handleManual}
-          busy={scanning}
-        />
+        <>
+          {repName && (
+            <p className="text-base font-medium text-brand-dark">
+              Welcome, {firstNameOf(repName)} 👋
+            </p>
+          )}
+          <BadgeScanner
+            onCapture={handleCapture}
+            onManual={handleManual}
+            busy={scanning}
+          />
+        </>
       )}
 
       {phase === "review" && (

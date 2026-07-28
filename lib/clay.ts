@@ -15,10 +15,14 @@ export async function sendToClay(contact: Contact): Promise<void> {
     throw new Error("CLAY_WEBHOOK_URL is not configured");
   }
 
+  // Send the rep fields under the snake_case names the Clay table expects.
+  const { repName, repId, ...rest } = contact;
+  const payload = { ...rest, rep_name: repName, rep_id: repId };
+
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(contact),
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {

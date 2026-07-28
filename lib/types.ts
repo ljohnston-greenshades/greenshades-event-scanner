@@ -19,6 +19,13 @@ export interface Contact {
    * every contact is tagged with its trade show. Not shown in the UI.
    */
   event: string;
+  /**
+   * The sales rep who captured this lead. Sourced from the `rep=<hubspotId>`
+   * query param and resolved to a name via lib/reps. Carried through to Clay
+   * (as rep_name / rep_id) for per-rep tracking. Not shown in the form.
+   */
+  repName: string;
+  repId: string;
 }
 
 export function emptyContact(): Contact {
@@ -31,6 +38,8 @@ export function emptyContact(): Contact {
     phone: "",
     notes: "",
     event: "",
+    repName: "",
+    repId: "",
   };
 }
 
