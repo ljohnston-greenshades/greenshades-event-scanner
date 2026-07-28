@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Contact, SubmitResult } from "@/lib/types";
 import { sendToClay } from "@/lib/clay";
+import { recordScan } from "@/lib/stats";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+// Best-effort per-rep tally. Never let a stats failure block the submission.
+async function tallyScan(contact: Contact) {
+  try {
+    await recordScan(contact.repId, contact.repName, contact.event);
+  } catch {
+    // ignore
+  }
+}
 
 /**
  * POST /api/contacts
@@ -34,6 +44,7 @@ export async function POST(req: NextRequest) {
 
   if (!process.env.CLAY_WEBHOOK_URL) {
     // Nothing configured yet — accept as a mock so previews work.
+    await tallyScan(contact);
     return NextResponse.json<SubmitResult>({
       ok: true,
       destination: "mock",
@@ -43,6 +54,7 @@ export async function POST(req: NextRequest) {
 
   try {
     await sendToClay(contact);
+    await tallyScan(contact);
     return NextResponse.json<SubmitResult>({
       ok: true,
       destination: "clay",
