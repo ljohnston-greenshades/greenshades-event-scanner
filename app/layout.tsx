@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Logo } from "@/components/Logo";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -22,8 +23,8 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <div className="mx-auto flex min-h-screen max-w-md flex-col">
-          <header className="bg-brand px-4 py-3 text-white">
-            <h1 className="text-lg font-semibold">Greenshades Event Scanner</h1>
+          <header className="border-b border-gray-200 bg-white px-4 py-3">
+            <Logo className="h-8 w-auto" />
           </header>
           <main className="flex-1 p-4">{children}</main>
         </div>
