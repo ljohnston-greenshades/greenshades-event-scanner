@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BadgeScanner } from "@/components/BadgeScanner";
+import { CapturedBadge } from "@/components/CapturedBadge";
 import { ReviewForm } from "@/components/ReviewForm";
 import { Contact, emptyContact, OcrResult, SubmitResult } from "@/lib/types";
 import { firstNameOf, repNameForId } from "@/lib/reps";
@@ -11,6 +12,7 @@ type Phase = "capture" | "review" | "done";
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("capture");
   const [contact, setContact] = useState<Contact>(emptyContact());
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [eventName, setEventName] = useState("");
   const [repName, setRepName] = useState("");
   const [repId, setRepId] = useState("");
@@ -37,6 +39,7 @@ export default function Home() {
   async function handleCapture(dataUrl: string) {
     setScanning(true);
     setError(null);
+    setCapturedImage(dataUrl);
     try {
       const res = await fetch("/api/ocr", {
         method: "POST",
@@ -84,6 +87,7 @@ export default function Home() {
   // Skip OCR entirely and go straight to a blank review form.
   function handleManual() {
     setContact({ ...emptyContact(), event: eventName, repName, repId });
+    setCapturedImage(null);
     setBanner(null);
     setError(null);
     setPhase("review");
@@ -91,6 +95,7 @@ export default function Home() {
 
   function reset() {
     setContact({ ...emptyContact(), event: eventName, repName, repId });
+    setCapturedImage(null);
     setBanner(null);
     setError(null);
     setPhase("capture");
@@ -136,6 +141,7 @@ export default function Home() {
           <p className="text-sm text-gray-500">
             Review and complete the details below, then save.
           </p>
+          {capturedImage && <CapturedBadge image={capturedImage} />}
           <ReviewForm
             contact={contact}
             onChange={setContact}
