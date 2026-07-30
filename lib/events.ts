@@ -74,7 +74,12 @@ export async function deleteEvent(slug: string): Promise<void> {
 export async function getEventReps(slug: string): Promise<string[]> {
   const redis = getRedis();
   if (!redis) return [];
-  return (await redis.smembers(repsKey(slug))) ?? [];
+  const members = (await redis.smembers(repsKey(slug))) ?? [];
+  // HubSpot IDs are all-numeric strings, and @upstash/redis auto-parses
+  // numeric-looking set members into JS numbers. Coerce back to strings so
+  // rep matching (resolveEventForRep), the admin roster, and the edit-form
+  // checkboxes all compare like-for-like.
+  return members.map((m) => String(m));
 }
 
 /** Replace the assigned reps for an event. */
