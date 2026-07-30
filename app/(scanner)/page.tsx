@@ -141,7 +141,7 @@ export default function Home() {
           <p className="text-sm text-gray-500">
             Check the details are correct, then save. Anything you don&apos;t
             have — email, title, and more — gets enriched and filled in
-            automatically.
+            automatically on the way into HubSpot.
           </p>
           {capturedImage && <BadgeProof image={capturedImage} />}
           <ReviewForm
