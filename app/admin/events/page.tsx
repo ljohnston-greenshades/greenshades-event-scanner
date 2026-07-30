@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { EventRecord } from "@/lib/events";
 import { readAdminKey, saveAdminKey } from "@/lib/adminKey";
+import { RepMultiSelect } from "@/components/RepMultiSelect";
 
 type EventWithReps = EventRecord & {
   repIds: string[];
@@ -115,15 +116,6 @@ export default function EventsAdminPage() {
       timezone: ev.timezone,
       repIds: ev.repIds,
     });
-  }
-
-  function toggleRep(id: string) {
-    setForm((f) => ({
-      ...f,
-      repIds: f.repIds.includes(id)
-        ? f.repIds.filter((r) => r !== id)
-        : [...f.repIds, id],
-    }));
   }
 
   // --- Login gate ---------------------------------------------------------
@@ -301,24 +293,21 @@ export default function EventsAdminPage() {
             </select>
           </label>
 
-          <fieldset>
-            <legend className="text-sm font-medium text-gray-700">
+          <div>
+            <span className="text-sm font-medium text-gray-700">
               Attending reps
-            </legend>
-            <div className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
-              {reps.map((r) => (
-                <label key={r.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={form.repIds.includes(r.id)}
-                    onChange={() => toggleRep(r.id)}
-                    className="rounded border-gray-300 text-brand focus:ring-brand"
-                  />
-                  {r.name}
-                </label>
-              ))}
+            </span>
+            <div className="mt-1">
+              <RepMultiSelect
+                reps={reps}
+                selected={form.repIds}
+                onChange={(ids) => setForm((f) => ({ ...f, repIds: ids }))}
+              />
             </div>
-          </fieldset>
+            <p className="mt-1 text-xs text-gray-400">
+              {form.repIds.length} selected
+            </p>
+          </div>
 
           <div className="flex gap-2 pt-1">
             <button
