@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Greenshades Event Scanner",
   description:
     "Scan a trade-show badge, review the details, and push to HubSpot.",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: "/icon-192.png",
     apple: "/apple-touch-icon.png",
