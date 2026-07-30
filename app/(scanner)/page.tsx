@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BadgeScanner } from "@/components/BadgeScanner";
+import { BadgeProof } from "@/components/BadgeProof";
 import { ReviewForm } from "@/components/ReviewForm";
 import { Contact, emptyContact, OcrResult, SubmitResult } from "@/lib/types";
 import { firstNameOf, repNameForId } from "@/lib/reps";
@@ -138,22 +139,17 @@ export default function Home() {
             <span aria-hidden>←</span> Back
           </button>
           <p className="text-sm text-gray-500">
-            Review and complete the details below, then save.
+            Check the details are correct, then save. Anything you don&apos;t
+            have — email, title, and more — gets enriched and filled in
+            automatically.
           </p>
+          {capturedImage && <BadgeProof image={capturedImage} />}
           <ReviewForm
             contact={contact}
             onChange={setContact}
             onSubmit={handleSubmit}
             submitting={submitting}
           />
-          {capturedImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={capturedImage}
-              alt="Captured badge — check the details above against it"
-              className="max-h-56 w-full rounded-lg border border-gray-200 bg-gray-50 object-contain"
-            />
-          )}
         </>
       )}
 
