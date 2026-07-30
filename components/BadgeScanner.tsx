@@ -71,8 +71,14 @@ export function BadgeScanner({
           {busy && <ScanningOverlay />}
         </div>
       ) : (
-        <div className="flex aspect-[3/2] w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-300 text-gray-400">
-          No badge captured yet
+        <div className="flex aspect-[3/2] w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 px-4 text-center text-gray-400">
+          <span className="text-2xl" aria-hidden>
+            ⤢
+          </span>
+          <span className="text-sm">
+            Point your camera at a badge and tap{" "}
+            <span className="font-medium text-gray-500">Scan a badge</span>.
+          </span>
         </div>
       )}
 
