@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { BadgeScanner } from "@/components/BadgeScanner";
-import { CapturedBadge } from "@/components/CapturedBadge";
 import { ReviewForm } from "@/components/ReviewForm";
 import { Contact, emptyContact, OcrResult, SubmitResult } from "@/lib/types";
 import { firstNameOf, repNameForId } from "@/lib/reps";
@@ -141,13 +140,20 @@ export default function Home() {
           <p className="text-sm text-gray-500">
             Review and complete the details below, then save.
           </p>
-          {capturedImage && <CapturedBadge image={capturedImage} />}
           <ReviewForm
             contact={contact}
             onChange={setContact}
             onSubmit={handleSubmit}
             submitting={submitting}
           />
+          {capturedImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={capturedImage}
+              alt="Captured badge — check the details above against it"
+              className="max-h-56 w-full rounded-lg border border-gray-200 bg-gray-50 object-contain"
+            />
+          )}
         </>
       )}
 
