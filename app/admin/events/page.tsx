@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import type { EventRecord } from "@/lib/events";
 import { readAdminKey, saveAdminKey } from "@/lib/adminKey";
 
-type EventWithReps = EventRecord & { repIds: string[] };
+type EventWithReps = EventRecord & {
+  repIds: string[];
+  activeToday: boolean;
+  todayInEventTz: string;
+};
 type Rep = { id: string; name: string };
 
 const TIMEZONES = [
@@ -189,10 +193,31 @@ export default function EventsAdminPage() {
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <p className="font-semibold text-gray-900">{ev.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-gray-900">{ev.name}</p>
+                      {ev.activeToday ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-brand-light px-2 py-0.5 text-xs font-semibold text-brand-dark">
+                          <span aria-hidden>●</span> Active now
+                        </span>
+                      ) : ev.todayInEventTz < ev.startDate ? (
+                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
+                          Upcoming
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-semibold text-gray-500">
+                          Ended
+                        </span>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-500">
                       {ev.startDate} → {ev.endDate} · {ev.timezone}
                     </p>
+                    {!ev.activeToday && (
+                      <p className="mt-0.5 text-xs text-amber-600">
+                        Won&apos;t appear in the scanner today ({ev.todayInEventTz}
+                        {" "}in {ev.timezone}). Only events live right now show up.
+                      </p>
+                    )}
                   </div>
                   <div className="flex shrink-0 gap-3 text-sm">
                     <button
