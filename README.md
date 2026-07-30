@@ -83,16 +83,31 @@ All read server-side only. See `.env.example`.
 | `KV_REST_API_URL` / `KV_REST_API_TOKEN` | Upstash Redis (Vercel Marketplace KV) for per-rep scan counts. Injected by the integration. | Admin only |
 | `ADMIN_PASSWORD` | Password for the `/admin` panel. Unset = panel disabled. | Admin only |
 
-## Query parameters
+## Query parameters & event resolution
 
-Open the app with these to tag scans (both optional, combine freely):
+Reps install the PWA from a **rep-only** link: `…/?rep=<hubspotId>`. That's the
+only param that should be baked into the home-screen install — on iOS the launch
+URL is frozen at install time, so an `event` baked in would lock the app to one
+show forever.
 
 | Param | Effect |
 | --- | --- |
-| `?event=HR-Tech-2026` | Tags every contact with the event; shown in the header. |
-| `?rep=<hubspotId>` | Attributes scans to a rep (see `lib/reps.ts`); greets them and tags contacts with `rep_name` / `rep_id`. |
+| `?rep=<hubspotId>` | Attributes scans to a rep (see `lib/reps.ts`); greets them, tags contacts with `rep_name` / `rep_id`, and drives event resolution. |
+| `?event=<slug>` | **Optional explicit override** (e.g. a booth QR). Fixed for the session; skips schedule resolution. |
 
-e.g. `…/?event=HR-Tech-2026&rep=91529343`
+**The event is normally resolved automatically at launch** from the schedule the
+events manager configures (see below): the app looks up which event the rep is
+assigned to that's running today (in the event's timezone). If the rep is
+assigned to more than one concurrent event, the header event chip opens a dialog
+to switch between just those. No `event` is taken from the baked URL.
+
+## Events & scheduling
+
+Events managers use **`/admin/events`** (same admin password) to create events
+(name, date range, timezone) and check off which reps attend each one. This
+schedule powers the automatic event resolution above and the leaderboard's event
+filter. Events + assignments are stored in Upstash Redis alongside the scan
+counts.
 
 ## Admin panel
 

@@ -1,41 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BadgeScanner } from "@/components/BadgeScanner";
 import { BadgeProof } from "@/components/BadgeProof";
 import { ReviewForm } from "@/components/ReviewForm";
+import { useEventContext } from "@/components/EventProvider";
 import { Contact, emptyContact, OcrResult, SubmitResult } from "@/lib/types";
-import { firstNameOf, repNameForId } from "@/lib/reps";
+import { firstNameOf } from "@/lib/reps";
 
 type Phase = "capture" | "review" | "done";
 
 export default function Home() {
+  // Rep + current event come from the shared context (resolved from the
+  // schedule at launch; overridable via the header).
+  const { repId, repName, eventSlug } = useEventContext();
+
   const [phase, setPhase] = useState<Phase>("capture");
   const [contact, setContact] = useState<Contact>(emptyContact());
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [reviewSnapshot, setReviewSnapshot] = useState("");
-  const [eventName, setEventName] = useState("");
-  const [repName, setRepName] = useState("");
-  const [repId, setRepId] = useState("");
   const [scanning, setScanning] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [banner, setBanner] = useState<string | null>(null);
-
-  // Read the `event=` query param once on mount and tag every scan with it.
-  // Read from window.location (not useSearchParams) to keep the page statically
-  // prerenderable without a Suspense boundary.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const event = params.get("event");
-    if (event) setEventName(event);
-
-    const rep = params.get("rep");
-    if (rep) {
-      setRepId(rep);
-      setRepName(repNameForId(rep));
-    }
-  }, []);
 
   async function handleCapture(dataUrl: string) {
     setScanning(true);
@@ -50,7 +37,7 @@ export default function Home() {
       const data = (await res.json()) as OcrResult & { error?: string };
       if (!res.ok) throw new Error(data.error || "OCR failed");
 
-      const next = { ...data.contact, event: eventName, repName, repId };
+      const next = { ...data.contact, event: eventSlug, repName, repId };
       setContact(next);
       setReviewSnapshot(JSON.stringify(next));
       setBanner(
@@ -89,7 +76,7 @@ export default function Home() {
 
   // Skip OCR entirely and go straight to a blank review form.
   function handleManual() {
-    const next = { ...emptyContact(), event: eventName, repName, repId };
+    const next = { ...emptyContact(), event: eventSlug, repName, repId };
     setContact(next);
     setReviewSnapshot(JSON.stringify(next));
     setCapturedImage(null);
@@ -110,7 +97,7 @@ export default function Home() {
   }
 
   function reset() {
-    setContact({ ...emptyContact(), event: eventName, repName, repId });
+    setContact({ ...emptyContact(), event: eventSlug, repName, repId });
     setCapturedImage(null);
     setBanner(null);
     setError(null);
