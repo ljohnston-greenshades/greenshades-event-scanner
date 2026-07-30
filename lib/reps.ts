@@ -7,6 +7,7 @@ export const REPS: Record<string, string> = {
   "51549607": "Will DiGiovanni",
   "82542702": "Joe Pritchard",
   "74289751": "Alanna Gravely",
+  "86029237": "Luke Johnston",
 };
 
 /** Full rep name for a HubSpot ID, or "" if unknown. */
