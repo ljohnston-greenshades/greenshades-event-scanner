@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { RepStat, Stats } from "@/lib/stats";
 import { formatEventName } from "@/lib/format";
+import { readAdminKey, saveAdminKey } from "@/lib/adminKey";
 
 function initials(name: string): string {
   const parts = name.trim().split(/\s+/);
@@ -32,12 +33,22 @@ export default function AdminPage() {
       if (!res.ok) throw new Error(data.error || "Failed to load stats.");
       setStats(data as Stats);
       setAuthedKey(adminKey);
+      saveAdminKey(adminKey);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  // Auto-load if we already have a session admin key (set on another admin page).
+  useEffect(() => {
+    const saved = readAdminKey();
+    if (saved) {
+      setKey(saved);
+      fetchStats("", saved);
+    }
+  }, [fetchStats]);
 
   function onLogin(e: React.FormEvent) {
     e.preventDefault();

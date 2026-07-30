@@ -1,4 +1,4 @@
-import { Redis } from "@upstash/redis";
+import { getRedis, redisConfigured } from "./redis";
 
 // Per-rep scan counters, backed by Upstash Redis (Vercel Marketplace KV).
 // Holds integer counts only — never contact/PII data. Everything degrades to a
@@ -8,23 +8,8 @@ const REP_COUNTS = "scans:rep_counts"; // hash: repId -> count
 const REP_NAMES = "scans:rep_names"; // hash: repId -> display name
 const REP_EVENT_COUNTS = "scans:rep_event_counts"; // hash: "repId::event" -> count
 
-let client: Redis | null = null;
-
-function getRedis(): Redis | null {
-  if (client) return client;
-  // Vercel's Upstash integration sets KV_REST_API_*; the standalone Upstash
-  // integration sets UPSTASH_REDIS_REST_*. Accept either.
-  const url =
-    process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
-  const token =
-    process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
-  if (!url || !token) return null;
-  client = new Redis({ url, token });
-  return client;
-}
-
 export function statsConfigured(): boolean {
-  return getRedis() !== null;
+  return redisConfigured();
 }
 
 /**
