@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Greenshades Event Scanner",
-    short_name: "Scanner",
+    name: "GreenScan",
+    short_name: "GreenScan",
     description:
       "Scan a trade-show badge, review the details, and push to HubSpot.",
     start_url: "/",
