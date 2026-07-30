@@ -3,9 +3,11 @@ import {
   deleteEvent,
   EventRecord,
   getEventReps,
+  isActive,
   listEvents,
   setEventReps,
   slugify,
+  todayInTimezone,
   upsertEvent,
 } from "@/lib/events";
 import { redisConfigured } from "@/lib/redis";
@@ -41,7 +43,15 @@ export async function GET(req: NextRequest) {
 
   const events = await listEvents();
   const withReps = await Promise.all(
-    events.map(async (e) => ({ ...e, repIds: await getEventReps(e.slug) })),
+    events.map(async (e) => ({
+      ...e,
+      repIds: await getEventReps(e.slug),
+      // Server-authoritative "is this event live right now?" so the UI can
+      // flag a date range that doesn't include today — the usual reason an
+      // event never shows up in the scanner.
+      activeToday: isActive(e),
+      todayInEventTz: todayInTimezone(e.timezone),
+    })),
   );
   // Roster of all known reps for the assignment checkboxes.
   const reps = Object.entries(REPS).map(([id, name]) => ({ id, name }));

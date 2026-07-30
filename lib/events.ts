@@ -44,7 +44,7 @@ export function todayInTimezone(timezone: string, now: Date = new Date()): strin
   }
 }
 
-function isActive(event: EventRecord, now: Date): boolean {
+export function isActive(event: EventRecord, now: Date = new Date()): boolean {
   const today = todayInTimezone(event.timezone, now);
   return event.startDate <= today && today <= event.endDate;
 }
