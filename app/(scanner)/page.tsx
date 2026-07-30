@@ -13,6 +13,7 @@ export default function Home() {
   const [phase, setPhase] = useState<Phase>("capture");
   const [contact, setContact] = useState<Contact>(emptyContact());
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [reviewSnapshot, setReviewSnapshot] = useState("");
   const [eventName, setEventName] = useState("");
   const [repName, setRepName] = useState("");
   const [repId, setRepId] = useState("");
@@ -49,7 +50,9 @@ export default function Home() {
       const data = (await res.json()) as OcrResult & { error?: string };
       if (!res.ok) throw new Error(data.error || "OCR failed");
 
-      setContact({ ...data.contact, event: eventName, repName, repId });
+      const next = { ...data.contact, event: eventName, repName, repId };
+      setContact(next);
+      setReviewSnapshot(JSON.stringify(next));
       setBanner(
         data.mocked
           ? "Demo mode: no ANTHROPIC_API_KEY set, showing sample data."
@@ -86,11 +89,24 @@ export default function Home() {
 
   // Skip OCR entirely and go straight to a blank review form.
   function handleManual() {
-    setContact({ ...emptyContact(), event: eventName, repName, repId });
+    const next = { ...emptyContact(), event: eventName, repName, repId };
+    setContact(next);
+    setReviewSnapshot(JSON.stringify(next));
     setCapturedImage(null);
     setBanner(null);
     setError(null);
     setPhase("review");
+  }
+
+  // Back from review → capture. Confirm first if the lead has been edited.
+  function handleBack() {
+    if (
+      JSON.stringify(contact) !== reviewSnapshot &&
+      !window.confirm("Discard this lead and go back?")
+    ) {
+      return;
+    }
+    reset();
   }
 
   function reset() {
@@ -133,7 +149,7 @@ export default function Home() {
         <>
           <button
             type="button"
-            onClick={reset}
+            onClick={handleBack}
             className="-ml-1 flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-gray-700"
           >
             <span aria-hidden>←</span> Back
@@ -155,13 +171,24 @@ export default function Home() {
 
       {phase === "done" && (
         <div className="space-y-4 text-center">
-          <p className="text-lg font-semibold text-brand-dark">Saved ✓</p>
+          <p className="text-4xl">✓</p>
+          <p className="text-lg font-semibold text-brand-dark">
+            Saved
+            {(() => {
+              const name =
+                [contact.firstName, contact.lastName]
+                  .filter(Boolean)
+                  .join(" ") || contact.company;
+              return name ? ` ${name}` : "";
+            })()}
+          </p>
           <button
             type="button"
+            autoFocus
             onClick={reset}
             className="w-full rounded-lg bg-brand px-4 py-3 font-semibold text-white"
           >
-            Scan another badge
+            Scan next badge
           </button>
         </div>
       )}

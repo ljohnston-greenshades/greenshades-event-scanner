@@ -1,14 +1,54 @@
 "use client";
 
+import { InputHTMLAttributes } from "react";
 import { Contact } from "@/lib/types";
 
-const FIELDS: { key: keyof Contact; label: string; type?: string }[] = [
-  { key: "firstName", label: "First name" },
-  { key: "lastName", label: "Last name" },
-  { key: "company", label: "Company" },
-  { key: "jobTitle", label: "Job title" },
-  { key: "email", label: "Email", type: "email" },
-  { key: "phone", label: "Phone", type: "tel" },
+type Field = {
+  key: keyof Contact;
+  label: string;
+  input?: InputHTMLAttributes<HTMLInputElement>;
+};
+
+// Per-field mobile keyboard/autofill hygiene so phones don't fight the rep —
+// e.g. no auto-capitalizing or autocorrecting email addresses.
+const FIELDS: Field[] = [
+  {
+    key: "firstName",
+    label: "First name",
+    input: { autoCapitalize: "words", autoComplete: "given-name" },
+  },
+  {
+    key: "lastName",
+    label: "Last name",
+    input: { autoCapitalize: "words", autoComplete: "family-name" },
+  },
+  {
+    key: "company",
+    label: "Company",
+    input: { autoCapitalize: "words", autoComplete: "organization" },
+  },
+  {
+    key: "jobTitle",
+    label: "Job title",
+    input: { autoCapitalize: "words", autoComplete: "organization-title" },
+  },
+  {
+    key: "email",
+    label: "Email",
+    input: {
+      type: "email",
+      inputMode: "email",
+      autoCapitalize: "none",
+      autoCorrect: "off",
+      spellCheck: false,
+      autoComplete: "email",
+    },
+  },
+  {
+    key: "phone",
+    label: "Phone",
+    input: { type: "tel", inputMode: "tel", autoComplete: "tel" },
+  },
 ];
 
 /**
@@ -34,11 +74,12 @@ export function ReviewForm({
         onSubmit();
       }}
     >
-      {FIELDS.map(({ key, label, type }) => (
+      {FIELDS.map(({ key, label, input }) => (
         <label key={key} className="block">
           <span className="text-sm font-medium text-gray-700">{label}</span>
           <input
-            type={type ?? "text"}
+            type="text"
+            {...input}
             value={contact[key]}
             onChange={(e) => onChange({ ...contact, [key]: e.target.value })}
             className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
