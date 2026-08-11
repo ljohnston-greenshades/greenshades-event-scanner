@@ -10,6 +10,20 @@ import { firstNameOf } from "@/lib/reps";
 
 type Phase = "capture" | "review" | "done";
 
+// Read a response body as JSON without throwing on non-JSON payloads (e.g. a
+// plain-text "Request Entity Too Large" from the platform), so upstream errors
+// surface as readable messages instead of a JSON parse error.
+async function readJson<T>(res: Response): Promise<T & { error?: string }> {
+  const text = await res.text();
+  const fallback = {} as T & { error?: string };
+  if (!text) return fallback;
+  try {
+    return JSON.parse(text) as T & { error?: string };
+  } catch {
+    return { ...fallback, error: text.slice(0, 200) };
+  }
+}
+
 export function Scanner() {
   // Rep + current event come from the shared context (resolved from the
   // schedule at launch; overridable via the header).
@@ -34,8 +48,13 @@ export function Scanner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ image: dataUrl }),
       });
-      const data = (await res.json()) as OcrResult & { error?: string };
-      if (!res.ok) throw new Error(data.error || "OCR failed");
+      const data = await readJson<OcrResult>(res);
+      if (!res.ok) {
+        if (res.status === 413) {
+          throw new Error("That photo was too large to upload. Please try again.");
+        }
+        throw new Error(data.error || `OCR failed (${res.status}).`);
+      }
 
       const next = { ...data.contact, event: eventSlug, repName, repId };
       setContact(next);
@@ -62,8 +81,8 @@ export function Scanner() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(contact),
       });
-      const data = (await res.json()) as SubmitResult & { error?: string };
-      if (!res.ok) throw new Error(data.error || "Submit failed");
+      const data = await readJson<SubmitResult>(res);
+      if (!res.ok) throw new Error(data.error || `Submit failed (${res.status}).`);
 
       setBanner(data.message);
       setPhase("done");
@@ -127,6 +146,7 @@ export function Scanner() {
           <BadgeScanner
             onCapture={handleCapture}
             onManual={handleManual}
+            onError={setError}
             busy={scanning}
           />
         </>
