@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { ScanningOverlay } from "@/components/ScanningOverlay";
+import { prepareImageForUpload } from "@/lib/image";
 
 /**
  * The capture screen. Three ways in:
@@ -13,24 +14,34 @@ import { ScanningOverlay } from "@/components/ScanningOverlay";
 export function BadgeScanner({
   onCapture,
   onManual,
+  onError,
   busy,
 }: {
   onCapture: (dataUrl: string) => void;
   onManual: () => void;
+  onError: (message: string | null) => void;
   busy: boolean;
 }) {
   const cameraRef = useRef<HTMLInputElement>(null);
   const uploadRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
+  const [preparing, setPreparing] = useState(false);
 
-  function handleFile(file: File) {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
+  async function handleFile(file: File) {
+    setPreparing(true);
+    onError(null);
+    try {
+      // Downscale + re-encode to JPEG so large / HEIC camera-roll photos
+      // upload reliably (see lib/image.ts).
+      const dataUrl = await prepareImageForUpload(file);
       setPreview(dataUrl);
       onCapture(dataUrl);
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      setPreview(null);
+      onError(err instanceof Error ? err.message : "Couldn't read that photo.");
+    } finally {
+      setPreparing(false);
+    }
   }
 
   function onInputChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -39,6 +50,8 @@ export function BadgeScanner({
     // Reset so selecting the same file again still fires onChange.
     e.target.value = "";
   }
+
+  const working = busy || preparing;
 
   return (
     <div className="space-y-4">
@@ -68,7 +81,7 @@ export function BadgeScanner({
             alt="Captured badge"
             className="w-full rounded-lg border border-gray-200"
           />
-          {busy && <ScanningOverlay />}
+          {working && <ScanningOverlay />}
         </div>
       ) : (
         <div className="flex aspect-[3/2] w-full flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-gray-300 px-4 text-center text-gray-400">
@@ -85,18 +98,18 @@ export function BadgeScanner({
       {/* Primary call to action */}
       <button
         type="button"
-        disabled={busy}
+        disabled={working}
         onClick={() => cameraRef.current?.click()}
         className="w-full rounded-lg bg-brand px-4 py-3 font-semibold text-white disabled:opacity-50"
       >
-        {busy ? "Reading badge…" : "Scan a badge"}
+        {working ? "Reading badge…" : "Scan a badge"}
       </button>
 
       {/* Secondary options */}
       <div className="grid grid-cols-2 gap-3">
         <button
           type="button"
-          disabled={busy}
+          disabled={working}
           onClick={() => uploadRef.current?.click()}
           className="rounded-lg border border-brand px-3 py-3 font-semibold text-brand disabled:opacity-50"
         >
@@ -104,7 +117,7 @@ export function BadgeScanner({
         </button>
         <button
           type="button"
-          disabled={busy}
+          disabled={working}
           onClick={onManual}
           className="rounded-lg border border-gray-300 px-3 py-3 font-semibold text-gray-700 disabled:opacity-50"
         >
