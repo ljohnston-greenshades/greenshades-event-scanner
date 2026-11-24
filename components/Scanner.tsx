@@ -56,7 +56,13 @@ export function Scanner() {
         throw new Error(data.error || `OCR failed (${res.status}).`);
       }
 
-      const next = { ...data.contact, event: eventSlug, repName, repId };
+      const next = {
+        ...emptyContact(),
+        ...data.contact,
+        event: eventSlug,
+        repName,
+        repId,
+      };
       setContact(next);
       setReviewSnapshot(JSON.stringify(next));
       setBanner(
@@ -76,10 +82,15 @@ export function Scanner() {
     setSubmitting(true);
     setError(null);
     try {
+      // Stamp the hand-raise at the moment the rep saves it.
+      const payload: Contact = {
+        ...contact,
+        handRaisedAt: contact.handRaiser ? new Date().toISOString() : "",
+      };
       const res = await fetch("/api/contacts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(contact),
+        body: JSON.stringify(payload),
       });
       const data = await readJson<SubmitResult>(res);
       if (!res.ok) throw new Error(data.error || `Submit failed (${res.status}).`);
@@ -189,6 +200,11 @@ export function Scanner() {
               return name ? ` ${name}` : "";
             })()}
           </p>
+          {contact.handRaiser && (
+            <p className="text-sm font-medium text-brand-dark">
+              🙋 Flagged as a hand-raiser for demo follow-up
+            </p>
+          )}
           <button
             type="button"
             autoFocus

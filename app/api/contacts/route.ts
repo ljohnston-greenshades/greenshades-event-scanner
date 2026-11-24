@@ -9,7 +9,12 @@ export const dynamic = "force-dynamic";
 // Best-effort per-rep tally. Never let a stats failure block the submission.
 async function tallyScan(contact: Contact) {
   try {
-    await recordScan(contact.repId, contact.repName, contact.event);
+    await recordScan(
+      contact.repId,
+      contact.repName,
+      contact.event,
+      contact.handRaiser === true,
+    );
   } catch {
     // ignore
   }
