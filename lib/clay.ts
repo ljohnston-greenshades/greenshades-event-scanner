@@ -8,8 +8,8 @@ import { cleanDemoFocus } from "./demo";
  * IMPORTANT: the `event_demo_*` / `demo_focus_area` keys are only present when
  * the rep flagged a hand-raiser. For casual scans they're omitted entirely —
  * never sent as false/empty — so a later casual re-scan can't erase an earlier
- * genuine hand-raise in HubSpot. `hand_raiser` is always sent (true/false) so
- * Clay can branch on it; it should NOT be mapped onto event_demo_interest.
+ * genuine hand-raise in HubSpot. `event_demo_interest` is the single hand-raise
+ * flag: Clay should write the demo fields only when it is present (true).
  */
 export function buildClayPayload(contact: Contact): Record<string, unknown> {
   const {
@@ -28,7 +28,6 @@ export function buildClayPayload(contact: Contact): Record<string, unknown> {
     ...rest,
     rep_name: repName,
     rep_id: repId,
-    hand_raiser: isHandRaiser,
   };
 
   if (isHandRaiser) {
