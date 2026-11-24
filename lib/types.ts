@@ -26,6 +26,15 @@ export interface Contact {
    */
   repName: string;
   repId: string;
+  /**
+   * Hand-raiser: the person asked for a Greenshades demo (vs. a casual,
+   * vendor, or partner scan). Off by default; the rep opts in on review.
+   */
+  handRaiser: boolean;
+  /** Optional demo focus areas (HubSpot `demo_focus_area` values). */
+  demoFocus: string[];
+  /** ISO timestamp of the hand-raise, stamped on save. "" when not a hand-raiser. */
+  handRaisedAt: string;
 }
 
 export function emptyContact(): Contact {
@@ -40,6 +49,9 @@ export function emptyContact(): Contact {
     event: "",
     repName: "",
     repId: "",
+    handRaiser: false,
+    demoFocus: [],
+    handRaisedAt: "",
   };
 }
 

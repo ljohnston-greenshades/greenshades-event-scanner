@@ -137,8 +137,12 @@ export default function AdminPage() {
       </div>
 
       {/* Summary tiles */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatTile label="Total scans" value={stats.total.toLocaleString()} />
+        <StatTile
+          label="🙋 Hand-raisers"
+          value={(stats.totalHandRaisers ?? 0).toLocaleString()}
+        />
         <StatTile label="Active reps" value={String(stats.reps.length)} />
         <StatTile label="Leader" value={leader ? leader.repName : "—"} />
       </div>
@@ -215,8 +219,15 @@ function LeaderRow({
           <span className="truncate font-semibold text-gray-900">
             {rep.repName}
           </span>
-          <span className="shrink-0 tabular-nums text-sm text-gray-500">
-            {rep.count.toLocaleString()} scan{rep.count === 1 ? "" : "s"}
+          <span className="flex shrink-0 items-baseline gap-3 tabular-nums text-sm">
+            {(rep.handRaisers ?? 0) > 0 && (
+              <span className="rounded-full bg-brand-light px-2 py-0.5 font-semibold text-brand-dark">
+                🙋 {rep.handRaisers} hand-raiser{rep.handRaisers === 1 ? "" : "s"}
+              </span>
+            )}
+            <span className="text-gray-500">
+              {rep.count.toLocaleString()} scan{rep.count === 1 ? "" : "s"}
+            </span>
           </span>
         </div>
         <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-gray-100">
